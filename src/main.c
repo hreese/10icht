@@ -42,6 +42,26 @@ static void gpio_init(void) {
 	Chip_GPIO_SetPinDIRInput(LPC_GPIO_PORT, 0, 4);
 }
 
+#define SENSITIVITY 50000
+static bool get_switch(void) {
+	static unsigned int cnt = SENSITIVITY / 2;
+	while(1) {
+		if(Chip_GPIO_GetPinState(LPC_GPIO_PORT, 0, 4)) {
+			if(cnt > 0)
+				cnt--;
+		} else if(cnt < SENSITIVITY) {
+			cnt++;
+		}
+
+		if(cnt == 0)
+			return 0;
+		else if(cnt >= SENSITIVITY) {
+			cnt = SENSITIVITY;
+			return 1;
+		}
+	}
+}
+
 void main(void) {
 	gpio_init();
 	pwm_init();
@@ -51,7 +71,7 @@ void main(void) {
 
 	while(1) {
 wait:
-		while(Chip_GPIO_GetPinState(LPC_GPIO_PORT, 0, 4))
+		while(!get_switch())
 			;
 
 		fade_to(PWM_MAX, 5);
@@ -59,7 +79,7 @@ wait:
 
 start:
 		for(uint32_t i = 0; i < 60*5 * 100; i++) {
-			if(!Chip_GPIO_GetPinState(LPC_GPIO_PORT, 0, 4)) {
+			if(get_switch()) {
 				fade_to(0, 5);
 				goto wait;
 			}
@@ -70,7 +90,7 @@ start:
 		wobble();
 
 		for(uint32_t i = 0; i < 30 * 100; i++) {
-			if(!Chip_GPIO_GetPinState(LPC_GPIO_PORT, 0, 4)) {
+			if(get_switch()) {
 				delay_ticks(1000);
 				goto start;
 			}

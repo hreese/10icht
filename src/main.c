@@ -29,6 +29,20 @@ static void wobble(void) {
 	}
 }
 
+static void toggle(void) {
+	if(pwm_get())
+		pwm_set(0);
+	else
+		pwm_set(PWM_MAX);
+}
+
+static void strobe(void) {
+	for(uint8_t i = 0; i < 8; i++) {
+		toggle();
+		delay_ticks(60);
+	}
+}
+
 static void gpio_init(void) {
 	Chip_GPIO_Init(LPC_GPIO_PORT);
 
@@ -62,7 +76,12 @@ static bool get_switch(void) {
 	}
 }
 
+// Time to give the user to release the key
+#define RELEASE_TIME 300
+
 void main(void) {
+	uint32_t limit;
+
 	gpio_init();
 	pwm_init();
 	systick_init();
@@ -71,15 +90,31 @@ void main(void) {
 
 	while(1) {
 wait:
+		limit = 5;
 		while(!get_switch())
 			;
 
 		fade_to(PWM_MAX, 5);
-		delay_ticks(300);
+		delay_ticks(RELEASE_TIME);
 
 start:
-		for(uint32_t i = 0; i < 60*5 * 100; i++) {
-			if(get_switch()) {
+		for(uint32_t i = 0; i < limit * 60 * 100; i++) {
+			uint32_t cnt = 0;
+			while(get_switch()) {
+				cnt++;
+
+				if(cnt > 300) {
+					limit = 20;
+					strobe();
+
+					delay_ticks(2*RELEASE_TIME);
+					goto start;
+				}
+
+				delay_ticks(10);
+			}
+
+			if(cnt) {
 				fade_to(0, 5);
 				goto wait;
 			}
@@ -90,7 +125,22 @@ start:
 		wobble();
 
 		for(uint32_t i = 0; i < 30 * 100; i++) {
-			if(get_switch()) {
+			uint32_t cnt = 0;
+			while(get_switch()) {
+				cnt++;
+
+				if(cnt > 300) {
+					limit = 20;
+					strobe();
+
+					delay_ticks(2*RELEASE_TIME);
+					goto start;
+				}
+
+				delay_ticks(10);
+			}
+
+			if(cnt) {
 				delay_ticks(1000);
 				goto start;
 			}

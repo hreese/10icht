@@ -1,0 +1,9 @@
+## src-deps: yum install chrpath libftdi-devel libusbx-devel jimtcl-devel
+
+openocd -f debug812.cfg
+
+
+telnet localhost 4444
+  reset halt
+  flash write_image erase unlock ../licht.bin
+  reset

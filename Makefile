@@ -22,12 +22,12 @@ OBJCOPY=$(COMPILER_PREFIX)-objcopy
 SIZE=$(COMPILER_PREFIX)-size
 GDB=$(COMPILER_PREFIX)-gdb
 
-all: kuechenlicht.bin
+all: licht.bin
 
 %.o: %.c
 	$(CC) -c $(CFLAGS) -o $@ -Iinclude/ $<
 
-kuechenlicht.elf: $(OBJS)
+licht.elf: $(OBJS)
 	$(CC) -o $@ -T linker.ld $(LDFLAGS) $(OBJS) -lgcc
 	$(SIZE) $@
 
@@ -35,4 +35,4 @@ kuechenlicht.elf: $(OBJS)
 	$(OBJCOPY) -O binary $< $@
 
 clean:
-	rm -f $(OBJS) kuechenlicht.elf kuechenlicht.bin
+	rm -f $(OBJS) licht.elf licht.bin

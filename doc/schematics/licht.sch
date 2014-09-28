@@ -22825,8 +22825,8 @@ Reichelt</description>
 <part name="+3V5" library="supply1" deviceset="+3V3" device=""/>
 <part name="P+1" library="supply1" deviceset="V+" device=""/>
 <part name="P+2" library="supply1" deviceset="V+" device=""/>
-<part name="Q2" library="SparkFun-DiscreteSemi" deviceset="MOSFET-PCHANNEL" device="SMD"/>
-<part name="D1" library="diode" deviceset="ZENER-DIODE" device="SOT223"/>
+<part name="Q2" library="SparkFun-DiscreteSemi" deviceset="MOSFET-PCHANNEL" device="" value="IRFML8244"/>
+<part name="D1" library="diode" deviceset="ZENER-DIODE" device="SOT23" value="SMD ZD 16"/>
 <part name="P+3" library="supply1" deviceset="V+" device=""/>
 <part name="R3" library="rcl" deviceset="R-EU_" device="R0805" value="100k"/>
 <part name="GND12" library="supply1" deviceset="GND" device=""/>

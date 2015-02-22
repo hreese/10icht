@@ -13,8 +13,8 @@ OBJS = src/startup.o \
 
 COMPILER_PREFIX=arm-none-eabi
 
-CFLAGS=-mthumb -mcpu=cortex-m0plus -Os -g -flto -fno-common -ffreestanding -Wall -Wno-unused-function -Wextra -Werror -std=c99
-LDFLAGS=-Wl,--gc-sections -Os -flto -g -nostartfiles -mthumb -mcpu=cortex-m0plus
+CFLAGS=-mthumb -mcpu=cortex-m0plus -O0 -g -flto -fno-common -ffreestanding -Wall -Wno-unused-function -Wextra -Werror -std=c99
+LDFLAGS=-Wl,--gc-sections -O0 -flto -g -nostartfiles -mthumb -mcpu=cortex-m0plus
 
 CC=$(COMPILER_PREFIX)-gcc
 LD=$(COMPILER_PREFIX)-ld

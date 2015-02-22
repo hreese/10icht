@@ -37,10 +37,10 @@ void pwm_set_raw(uint16_t val) {
 
 void pwm_init(void) {
 	// configure GPIO
-	Chip_GPIO_SetPinDIR(LPC_GPIO_PORT, 0, 13, true);
+	Chip_GPIO_SetPinDIR(LPC_GPIO_PORT, 0, 12, true);
 
 	Chip_SWM_Init();
-	Chip_SWM_MovablePinAssign(SWM_CTOUT_0_O, 13);
+	Chip_SWM_MovablePinAssign(SWM_CTOUT_0_O, 12);
 	Chip_SWM_Deinit();
 
 	// configure SCT

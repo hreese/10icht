@@ -54,6 +54,9 @@ static void gpio_init(void) {
 	Chip_IOCON_PinSetMode(LPC_IOCON, IOCON_PIO4, PIN_MODE_PULLUP);
 
 	Chip_GPIO_SetPinDIRInput(LPC_GPIO_PORT, 0, 4);
+	Chip_GPIO_SetPinDIRInput(LPC_GPIO_PORT, 0, 10);
+	Chip_GPIO_SetPinDIRInput(LPC_GPIO_PORT, 0, 11);
+	Chip_GPIO_SetPinDIRInput(LPC_GPIO_PORT, 0, 16);
 }
 
 #define SENSITIVITY 50000
@@ -79,75 +82,40 @@ static bool get_switch(void) {
 // Time to give the user to release the key
 #define RELEASE_TIME 300
 
-void main(void) {
-	uint32_t limit;
+// ALPS notation
+#define ROTARY_A 11
+#define ROTARY_B 10
+#define ROTARY_BUTTON 16
 
+void main(void) {
 	gpio_init();
 	pwm_init();
 	systick_init();
 
 	pwm_set(0);
+    // 0xa0000000
 
+    bool renc_old = true;
+    bool renc_new = true;
+    uint8_t pwm_bright = 0;
 	while(1) {
-wait:
-		limit = 5;
-		while(!get_switch())
-			;
-
-		fade_to(PWM_MAX, 5);
-		delay_ticks(RELEASE_TIME);
-
-start:
-		for(uint32_t i = 0; i < limit * 60 * 100; i++) {
-			uint32_t cnt = 0;
-			while(get_switch()) {
-				cnt++;
-
-				if(cnt > 300) {
-					limit = 20;
-					strobe();
-
-					delay_ticks(2*RELEASE_TIME);
-					goto start;
-				}
-
-				delay_ticks(10);
-			}
-
-			if(cnt) {
-				fade_to(0, 5);
-				goto wait;
-			}
-
-			delay_ticks(10);
-		}
-
-		wobble();
-
-		for(uint32_t i = 0; i < 30 * 100; i++) {
-			uint32_t cnt = 0;
-			while(get_switch()) {
-				cnt++;
-
-				if(cnt > 300) {
-					limit = 20;
-					strobe();
-
-					delay_ticks(2*RELEASE_TIME);
-					goto start;
-				}
-
-				delay_ticks(10);
-			}
-
-			if(cnt) {
-				delay_ticks(1000);
-				goto start;
-			}
-
-			delay_ticks(10);
-		}
-
-		fade_to(0, 30);
+        //pwm_set(PWM_MAX * Chip_GPIO_GetPinState(LPC_GPIO_PORT, 0, 10));
+        renc_new = Chip_GPIO_GetPinState(LPC_GPIO_PORT, 0, ROTARY_A);
+        // fallende Flanke
+        if (renc_old == true && renc_new == false) {
+            if (Chip_GPIO_GetPinState(LPC_GPIO_PORT, 0, ROTARY_B)  == true) { // CW
+                if (pwm_bright < PWM_MAX ) pwm_bright++;
+            } else { // CCW
+                if (pwm_bright > 0 ) pwm_bright--;
+            }
+            pwm_set(pwm_bright);
+        }
+        renc_old = renc_new;
+    }
+    /*
+	while(1) {
+    fade_to(PWM_MAX, 5);
+    fade_to(0, 5);
 	}
+    */
 }

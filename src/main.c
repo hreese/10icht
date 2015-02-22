@@ -59,33 +59,46 @@ static void gpio_init(void) {
 	Chip_GPIO_SetPinDIRInput(LPC_GPIO_PORT, 0, 16);
 }
 
-#define SENSITIVITY 50000
-static bool get_switch(void) {
-	static unsigned int cnt = SENSITIVITY / 2;
-	while(1) {
-		if(Chip_GPIO_GetPinState(LPC_GPIO_PORT, 0, 4)) {
-			if(cnt > 0)
-				cnt--;
-		} else if(cnt < SENSITIVITY) {
-			cnt++;
-		}
-
-		if(cnt == 0)
-			return 0;
-		else if(cnt >= SENSITIVITY) {
-			cnt = SENSITIVITY;
-			return 1;
-		}
-	}
-}
-
-// Time to give the user to release the key
-#define RELEASE_TIME 300
-
 // ALPS notation
 #define ROTARY_A 11
 #define ROTARY_B 10
 #define ROTARY_BUTTON 16
+
+#define SENSITIVITY 50
+
+static bool get_switch(void) {
+    static unsigned int cnt = SENSITIVITY / 2;
+    while(1) {
+        if(Chip_GPIO_GetPinState(LPC_GPIO_PORT, 0, ROTARY_BUTTON)) {
+            if(cnt > 0)
+                cnt--;
+        } else if(cnt < SENSITIVITY) {
+            cnt++;
+        }
+
+        if(cnt == 0)
+            return 0;
+        else if(cnt >= SENSITIVITY) {
+            cnt = SENSITIVITY;
+            return 1;
+        }
+    }
+}
+
+void up(int* value, int limit) {
+    if (*value < limit) {
+        (*value)++;
+    }
+}
+
+void down(int* value, int limit) {
+    if (*value > limit) {
+        (*value)--;
+    }
+}
+
+#define DEBOUNCE 50
+#define FADE_DELAY 1500
 
 void main(void) {
 	gpio_init();
@@ -95,22 +108,64 @@ void main(void) {
 	pwm_set(0);
     // 0xa0000000
 
-    bool renc_old = true;
-    bool renc_new = true;
-    uint8_t pwm_bright = 0;
-	while(1) {
-        //pwm_set(PWM_MAX * Chip_GPIO_GetPinState(LPC_GPIO_PORT, 0, 10));
-        renc_new = Chip_GPIO_GetPinState(LPC_GPIO_PORT, 0, ROTARY_A);
-        // fallende Flanke
-        if (renc_old == true && renc_new == false) {
-            if (Chip_GPIO_GetPinState(LPC_GPIO_PORT, 0, ROTARY_B)  == true) { // CW
-                if (pwm_bright < PWM_MAX ) pwm_bright++;
-            } else { // CCW
-                if (pwm_bright > 0 ) pwm_bright--;
-            }
-            pwm_set(pwm_bright);
+    /*
+    int x = 0;
+    while(1) {
+        if (!Chip_GPIO_GetPinState(LPC_GPIO_PORT, 0, ROTARY_A)) {
+            x++;   
         }
-        renc_old = renc_new;
+    }
+    */
+
+    int renc = DEBOUNCE;
+    int fade_direction = 0;
+    int pwm_bright = 0;
+    int fade_delay_counter = 0;
+	while(1) {
+        if (Chip_GPIO_GetPinState(LPC_GPIO_PORT, 0, ROTARY_A)) {
+            up(&renc, DEBOUNCE);
+        } else {
+            if (renc > 0) {
+                --renc;
+                // fallende Flanke
+                if (renc == 0) {
+                    if (Chip_GPIO_GetPinState(LPC_GPIO_PORT, 0, ROTARY_B)  == true) { // CW
+                        up(&pwm_bright, PWM_MAX);
+                    } else { // CCW
+                        down(&pwm_bright, 0);
+                    }
+                    pwm_set(pwm_bright);
+                }
+            }
+        }
+        if (get_switch()) {
+            switch (fade_direction) {
+                case -1:
+                    if (fade_delay_counter++ > FADE_DELAY) {
+                        down(&pwm_bright, 0);
+                        pwm_set(pwm_bright);
+                        fade_delay_counter = 0;
+                    }
+                    break;
+                case  0:
+                    if (pwm_bright < PWM_MAX/2) {
+                        fade_direction = 1;
+                    } else {
+                        fade_direction = -1;
+                    }
+                    break;
+                case  1:
+                    if (fade_delay_counter++ > FADE_DELAY) {
+                        up(&pwm_bright, PWM_MAX);
+                        pwm_set(pwm_bright);
+                        fade_delay_counter = 0;
+                    }
+                    break;
+            }
+        } else {
+            fade_direction = 0;
+        }
+
     }
     /*
 	while(1) {

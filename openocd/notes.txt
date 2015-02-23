@@ -2,6 +2,12 @@
 
 openocd -f debug812.cfg
 
+----------------
+sudo -i
+~ge3242/src/openocd-0.8.0/inst/bin/openocd -f /home/ge3242/src/10icht/openocd/debug812.cfg -c 'init' -c 'halt' -c 'flash write_image erase unlock
+/home/ge3242/src/10icht/licht.bin' -c reset -c exit
+----------------
+
 
 telnet localhost 4444
   reset halt
